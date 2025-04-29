@@ -1,31 +1,34 @@
-name: Build
+name: Build APK
 
-on: [push, pull_request, merge_group]
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write  # Permissão necessária para upload do APK
 
 jobs:
   build:
-    name: JDK ${{ matrix.java_version }}
-    runs-on: macOS-latest
-
-    strategy:
-      matrix:
-        java_version: [17]
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Gradle Wrapper Validation
-        uses: gradle/actions/wrapper-validation@v4
-
-      - name: Setup gradle
-        uses: gradle/gradle-build-action@v3
-
-      - name: Install JDK ${{ matrix.java_version }}
-        uses: actions/setup-java@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
-          java-version: ${{ matrix.java_version }}
+          java-version: 17
+          distribution: 'temurin'
 
-      - name: Build with Gradle
-        run: ./gradlew licensee ktlint testDebug build --stacktrace
+      - name: Build APK
+        run: |
+          chmod +x gradlew  # Garante permissão de execução
+          ./gradlew sample:assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4  # Versão atualizada
+        with:
+          name: sample-debug.apk
+          path: sample/build/outputs/apk/debug/sample-debug.apk
